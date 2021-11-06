@@ -204,7 +204,7 @@ export default {
   min-width: 300px;
   margin: 10px;
   padding: 10px;
-  overflow: hidden;
+  /* overflow: hidden; */
   display: flex;
   flex-direction: column;
   align-items: center;
