@@ -1,10 +1,11 @@
 <template>
   <div class="list__wrapper paper">
     <my-dialog class="dialog" v-model:show="dialogVisible">
-      <med-item v-for="med in newMedicine" :key="med.id" :med="med"  />
+      <med-item v-for="med in newMedicine" :key="med.id" :med="med" />
     </my-dialog>
-
     <div class="list__sort-panel">
+      <!-- <input v-model="searchQuery" placeholder=" search..." type="text" /> -->
+
       <button @click="fetchPatients" class="btn">All</button>
       <button v-bind:disabled="myDisabled30" @click="sortOver30" class="btn">
         powyżej 30
@@ -13,15 +14,16 @@
         poniżej 63
       </button>
     </div>
-
-    <list
-      class="list"
-      :patients="patients"
-      :newMedicine="newMedicine"
-      @show="findMedicineId"
-      v-if="!isListLoading"
-    />
-    <span v-else>Loading...</span>
+    <transition-group name="list">
+      <list
+        class="list"
+        :patients="patients"
+        :newMedicine="newMedicine"
+        @show="findMedicineId"
+        v-if="!isListLoading"
+      />
+      <spinner v-else />
+    </transition-group>
 
     <div class="page__wrapper">
       <button
@@ -45,14 +47,16 @@
 import axios from "axios";
 
 import List from "./List.vue";
-import MyDialog from "./MyDialog.vue";
+import MyDialog from "./UI/MyDialog.vue";
 import MedItem from "./MedItem.vue";
+import Spinner from "./UI/Spinner.vue";
 
 export default {
   components: {
     List,
     MyDialog,
     MedItem,
+    Spinner,
   },
   name: "MainContent",
   data() {
@@ -68,6 +72,8 @@ export default {
       totalPage: 0,
       myDisabled30: false,
       myDisabled63: false,
+      heightScren: 1000,
+      // searchQuery: "",
     };
   },
   mounted() {
@@ -76,7 +82,6 @@ export default {
     this.fetchAllPatients();
   },
 
-  computed: {},
   methods: {
     async fetchPatients() {
       try {
@@ -100,7 +105,6 @@ export default {
         this.isListLoading = false;
         this.myDisabled30 = false;
         this.myDisabled63 = false;
-        
       }
     },
     async fetchMedicine() {
@@ -124,7 +128,7 @@ export default {
       }
     },
     findMedicineId(pat) {
-const medicineIds =[]
+      const medicineIds = [];
 
       this.medicine.forEach((elem) => {
         const { patientIds, id } = elem;
@@ -136,9 +140,9 @@ const medicineIds =[]
       });
 
       ////////////
-            this.newMedicine.splice(0, 100);
-            /////
-     medicineIds.map((id) => {
+      this.newMedicine.splice(0, 100);
+      /////
+      medicineIds.map((id) => {
         for (let idx = 0; idx < this.medicine.length; idx++) {
           if (this.medicine[idx].id == id) {
             this.newMedicine.push(this.medicine[idx]);
@@ -146,6 +150,7 @@ const medicineIds =[]
         }
       });
       this.dialogVisible = true;
+      this.scrollToTop();
     },
     changePage(pageNum) {
       this.page = pageNum;
@@ -157,7 +162,7 @@ const medicineIds =[]
       });
       this.myDisabled30 = true;
       this.myDisabled63 = false;
-      
+
       // this.totalPage = Math.ceil(this.patients.length / this.limit);
       // this.patients = this.patients.slice( , this.page+10)
     },
@@ -168,21 +173,49 @@ const medicineIds =[]
       this.myDisabled63 = true;
       this.myDisabled30 = false;
     },
+    scrollToTop() {
+      window.scrollTo(0, 0);
+    },
+    // searching() {
+    //   return this.patients.filter((pat) => {
+    //     pat.name.toLowerCase().includes(this.searchQuery.toLowerCase());
+    //   });
+
+    // },
   },
-  watch:{
-    dialogVisible(){
-    }
-  }
+  computed: {},
+  watch: {
+    // searchQuery() {
+    //   console.log('lol')
+    //   this.searching()
+    // },
+  },
 };
 </script>
 <style scoped>
+.list__sort-panel {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+}
 .list__wrapper {
-  margin: 20px;
-  padding: 20px;
+  max-width: 1800px;
+  min-width: 300px;
+  margin: 10px;
+  padding: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
 }
 .page__wrapper {
   margin-top: 20px;
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
   gap: 5px;
 }
 .page {
@@ -193,6 +226,20 @@ const medicineIds =[]
 .current-page {
   background: rgba(255, 0, 0, 0.5);
 }
-
-
+.list-item {
+  display: inline-block;
+  margin-right: 10px;
+}
+.list-enter-active,
+.list-leave-active {
+  transition: all 2s ease;
+}
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: translateY(30px);
+}
+.flip-list-move {
+  transition: transform 0.8s ease;
+}
 </style>

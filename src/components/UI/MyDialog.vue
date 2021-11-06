@@ -30,13 +30,17 @@ export default {
   bottom: 0;
   right: 0;
   left: 0;
-  background-color: rgba(0, 0, 0, 0.8);
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.5);
   border-radius: 20px;
   display: flex;
-  z-index: 100;
+  z-index: 99;
+  backdrop-filter: blur(5em);
+  overflow: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 .dialog__content {
-  margin: 20px auto;
+  margin: 100px auto;
   padding: 10px;
   height: max-content;
 }
