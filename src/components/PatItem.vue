@@ -36,7 +36,7 @@ export default {
       type: Object,
       required: true,
     },
-    newMedicine: {
+    patientMedication: {
       type: Array,
       required: false,
     },

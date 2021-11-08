@@ -4,9 +4,9 @@
     <div class="list">
       <pat-item
         class="paper list__item"
-        v-for="pat in patients"
+        v-for="pat in allData"
         :pat="pat"
-        :newMedicine="newMedicine"
+        :patientMedication="patientMedication"
         :key="pat.id"
         @show="$emit('show', pat)"
       />
@@ -23,11 +23,11 @@ export default {
   components: { PatItem },
 
   props: {
-    patients: {
+    allData: {
       type: Array,
       required: true,
     },
-    newMedicine: {
+    patientMedication: {
       type: Array,
       required: true,
     },

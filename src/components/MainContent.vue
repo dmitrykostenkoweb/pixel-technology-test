@@ -1,55 +1,64 @@
 <template>
   <div class="list__wrapper paper">
     <my-dialog class="dialog" v-model:show="dialogVisible">
-      <med-item v-for="med in newMedicine" :key="med.id" :med="med" />
+      <med-item
+        v-for="patientMedication in patientMedication"
+        :key="patientMedication.id"
+        :patientMedication="patientMedication"
+      />
     </my-dialog>
-    <div class="list__sort-panel">
-      <!-- <input v-model="searchQuery" placeholder=" search..." type="text" /> -->
 
-      <button @click="fetchPatients" class="btn">All</button>
+    <div class="list__sort-panel">
+      <button @click="getData" class="btn">All</button>
       <button v-bind:disabled="myDisabled30" @click="sortOver30" class="btn">
         powyżej 30
       </button>
-      <button v-bind:disabled="myDisabled63" @click="sortUnder63" class="btn">
+      <button
+        v-bind:disabled="myDisabled63"
+        @click="sortUnder63Strength8"
+        class="btn"
+      >
         poniżej 63
+        <br />
+        z lekami mocy powyżej 8
       </button>
     </div>
+
+    <!-- <filter-panel @serchName="patientSearch" :allData="allData" /> -->
     <transition-group name="list">
       <list
         class="list"
-        :patients="patients"
-        :newMedicine="newMedicine"
-        @show="findMedicineId"
-        v-if="!isListLoading"
+        :allData="allData"
+        :patientMedication="patientMedication"
+        @show="getPatientMedication"
+        v-if="!isLoading"
       />
-      <spinner v-else />
+      <spinner style="position: absolute; margin-top: 55vh" v-else />
     </transition-group>
 
-    <div class="page__wrapper">
+    <!-- <div class="page__wrapper">
       <button
         v-for="pageNum in totalPage"
         :key="pageNum"
         class="page btn"
         :class="{
           ' current-page': page === pageNum,
-          hide: myDisabled30 == true,
-          hide: myDisabled63 == true,
         }"
         @click="changePage(pageNum)"
       >
         {{ pageNum }}
       </button>
-    </div>
+    </div> -->
   </div>
 </template>
 
 <script>
 import axios from "axios";
-
 import List from "./List.vue";
 import MyDialog from "./UI/MyDialog.vue";
 import MedItem from "./MedItem.vue";
 import Spinner from "./UI/Spinner.vue";
+// import FilterPanel from "./FilterPanel.vue";
 
 export default {
   components: {
@@ -57,138 +66,132 @@ export default {
     MyDialog,
     MedItem,
     Spinner,
+    // FilterPanel,
   },
   name: "MainContent",
   data() {
     return {
-      patients: [],
-      allPatients: [],
+      allData: [],
+      filtredAllData: [],
       medicine: [],
-      newMedicine: [],
-      isListLoading: false,
+      patientMedication: [],
+
+      isLoading: false,
       dialogVisible: false,
-      page: 1,
-      limit: 10,
-      totalPage: 0,
+      // page: 1,
+      // limit: 10,
+      // totalPage: 0,
       myDisabled30: false,
       myDisabled63: false,
-      heightScren: 1000,
-      // searchQuery: "",
     };
   },
   mounted() {
-    this.fetchPatients();
-    this.fetchMedicine();
-    this.fetchAllPatients();
+    this.getData();
   },
 
   methods: {
-    async fetchPatients() {
+    async getData() {
+      this.isLoading = true;
+      this.myDisabled63 = true;
+      this.myDisabled30 = true;
+
       try {
-        this.isListLoading = true;
-        const response = await axios.get(
-          "https://cerber.pixel.com.pl/api/patients",
-          {
-            params: {
-              _page: this.page,
-              _limit: this.limit,
-            },
-          }
+        const responsePatients = await axios.get(
+          "https://cerber.pixel.com.pl/api/patients"
         );
-        this.totalPage = Math.ceil(
-          response.headers["x-total-count"] / this.limit
+        this.allData = responsePatients.data;
+        const responseMedicine = await axios.get(
+          "https://cerber.pixel.com.pl/api/medicine"
         );
-        this.patients = response.data;
+        this.medicine = responseMedicine.data;
       } catch (error) {
         alert(`Error ${error}`);
       } finally {
-        this.isListLoading = false;
-        this.myDisabled30 = false;
-        this.myDisabled63 = false;
-      }
-    },
-    async fetchMedicine() {
-      try {
-        const response = await axios.get(
-          "https://cerber.pixel.com.pl/api/medicine"
-        );
-        this.medicine = response.data;
-      } catch (error) {
-        alert(`Error ${error}`);
-      }
-    },
-    async fetchAllPatients() {
-      try {
-        const response = await axios.get(
-          "https://cerber.pixel.com.pl/api/patients"
-        );
-        this.allPatients = response.data;
-      } catch (error) {
-        alert(`Error ${error}`);
-      }
-    },
-    findMedicineId(pat) {
-      const medicineIds = [];
+        this.allData.map((patient) => {
+          patient.medicineArr = [];
 
-      this.medicine.forEach((elem) => {
-        const { patientIds, id } = elem;
+          for (let i = 0; i < this.medicine.length; i++) {
+            const med = this.medicine[i];
 
-        if (patientIds.includes(pat.id)) {
-          let myId = id;
-          medicineIds.push(myId);
-        }
-      });
-
-      ////////////
-      this.newMedicine.splice(0, 100);
-      /////
-      medicineIds.map((id) => {
-        for (let idx = 0; idx < this.medicine.length; idx++) {
-          if (this.medicine[idx].id == id) {
-            this.newMedicine.push(this.medicine[idx]);
+            if (med.patientIds.includes(patient.id)) {
+              patient.medicineArr.push(med);
+            }
           }
+        });
+        this.isLoading = false;
+        this.myDisabled63 = false;
+        this.myDisabled30 = false;
+      }
+    },
+    ///////////////////
+
+    getPatientMedication(pat) {
+      this.allData.forEach((elem) => {
+        const { id, medicineArr } = elem;
+
+        if (id === pat.id) {
+          medicineArr.map((med) => this.patientMedication.push(med));
         }
       });
       this.dialogVisible = true;
       this.scrollToTop();
     },
-    changePage(pageNum) {
-      this.page = pageNum;
-      this.fetchPatients();
-    },
+
+    ///////////////////
+    // patientSearch(name) {
+    //   this.allData = this.allData.filter((patient) => {
+    //     return patient.name.toLowerCase().includes(name.toLowerCase());
+    //   });
+    // },
+    ///////////////////
     sortOver30() {
-      this.patients = this.allPatients.filter((item) => {
+      this.isLoading = true;
+
+      this.allData = this.allData.filter((item) => {
         return item.age > 30;
       });
       this.myDisabled30 = true;
       this.myDisabled63 = false;
-
-      // this.totalPage = Math.ceil(this.patients.length / this.limit);
-      // this.patients = this.patients.slice( , this.page+10)
+      this.isLoading = false;
     },
-    sortUnder63() {
-      this.patients = this.allPatients.filter((item) => {
-        return item.age < 63;
+
+    ///////////////////
+    sortUnder63Strength8() {
+      this.isLoading = true;
+
+      const result = [];
+
+      console.log(result);
+      this.allData.forEach((elem) => {
+        if (elem.age < 63) {
+          elem.medicineArr.forEach((e) => {
+            if (e.strength > 8) {
+              result.push(elem);
+            }
+          });
+        }
       });
+      const uniqueArray = result.filter((item, pos, self) => {
+        return self.indexOf(item) == pos;
+      });
+      this.allData = uniqueArray;
+
       this.myDisabled63 = true;
       this.myDisabled30 = false;
+      this.isLoading = false;
     },
+
     scrollToTop() {
       window.scrollTo(0, 0);
     },
-    // searching() {
-    //   return this.patients.filter((pat) => {
-    //     pat.name.toLowerCase().includes(this.searchQuery.toLowerCase());
-    //   });
-
-    // },
   },
   computed: {},
   watch: {
-    // searchQuery() {
-    //   console.log('lol')
-    //   this.searching()
-    // },
+    dialogVisible(newValue) {
+      if (newValue === false) {
+        this.patientMedication.splice(0, 100);
+      }
+    },
   },
 };
 </script>
@@ -202,15 +205,15 @@ export default {
 .list__wrapper {
   max-width: 1800px;
   min-width: 300px;
+  min-height: 800px;
   margin: 10px;
   padding: 10px;
-  /* overflow: hidden; */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-around;
 }
-.page__wrapper {
+/* .page__wrapper {
   margin-top: 20px;
   display: flex;
   flex-wrap: wrap;
@@ -225,8 +228,9 @@ export default {
 }
 .current-page {
   background: rgba(255, 0, 0, 0.5);
-}
+} */
 .list-item {
+  position: relative;
   display: inline-block;
   margin-right: 10px;
 }

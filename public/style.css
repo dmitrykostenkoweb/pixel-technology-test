@@ -134,9 +134,12 @@ img {
 /* input */
 input {
   background: #fff;
+  width: 200px;
   box-shadow: 0 6px 10px 0 rgba(0, 0, 0, 0.1);
-  border: 0;
+  border: 1px solid grey;
   outline: 0;
   border-radius: 5px;
   border: 1px solid grey;
+  margin: 10px;
+  padding: 5px;
 }
