@@ -1,5 +1,5 @@
 # test
-WEBSITE: https://pixel-technology-test.herokuapp.com/
+Deploy: https://pixel-technology-test.herokuapp.com/
 
 ## Project setup
 ```
